@@ -1,8 +1,0 @@
-setup.py
-src/United_Project.egg-info/PKG-INFO
-src/United_Project.egg-info/SOURCES.txt
-src/United_Project.egg-info/dependency_links.txt
-src/United_Project.egg-info/requires.txt
-src/United_Project.egg-info/top_level.txt
-src/flight/Flight.py
-src/flight/__init__.py
