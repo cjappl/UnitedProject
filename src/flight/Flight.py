@@ -1,10 +1,10 @@
-#--------------------------------------------
+# --------------------------------------------
 # flight.py
 # Purpose: Contains Airport and flight classes
 # Author: Chris Apple
 # Tests: test_flight.py
 # TODO:
-#---------------------------------------------
+# ---------------------------------------------
 
 import os
 import pdb
@@ -24,7 +24,7 @@ class Airport(object):
         return self._code
 
     def _init_code(self, code):
-        """ Cleans the code for input 
+        """ Cleans the code for input
 
         Parameters
         ----------
@@ -39,7 +39,7 @@ class Airport(object):
         Raises
         ------
         TypeError - if input string is of the wrong type
-        
+
         ValueError - if the string is not found in the supporting document
 
         TODO: Make code checking more robust
@@ -57,12 +57,34 @@ class Airport(object):
         if code + '\n' not in flight_codes:
             raise ValueError('FLIGHT CODE NOT FOUND: %s' % code)
 
-        return code 
+        return code
 
 
+class Flight(object):
 
+    def __init__(self, origin, destination, flight_num, equip, duration):
+        self._origin = origin
+        self._destination = destination
+        self._flight_num = flight_num
+        self._equip = equip
+        self._duration = duration
 
+    @property
+    def origin(self):
+        return self._origin
 
+    @property
+    def destination(self):
+        return self._destination
 
+    @property
+    def flight_num(self):
+        return self._flight_num
 
+    @property
+    def equip(self):
+        return self._equip
 
+    @property
+    def duration(self):
+        return self._duration

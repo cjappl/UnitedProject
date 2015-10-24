@@ -1,4 +1,4 @@
 *.swp
 *.pyc
-*.swp
+*.sw*
 src/United_Project.egg-info/
