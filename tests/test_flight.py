@@ -1,6 +1,7 @@
 import pytest
 import datetime
 from flight.flight import Airport, Flight
+from utils.united_logging import get_united_logger
 
 
 @pytest.fixture

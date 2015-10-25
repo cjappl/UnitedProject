@@ -8,9 +8,12 @@
 
 import os
 import pdb
+from utils.united_logging import get_united_logger
 
 FLIGHT_CODES_FPATH = 'valid_flight_codes.txt'
 FLIGHT_DIR = os.path.dirname(os.path.realpath(__file__))
+
+logger = get_united_logger()
 
 
 class Airport(object):
@@ -48,6 +51,7 @@ class Airport(object):
         try:
             code = code.upper()
         except AttributeError:
+            logger.exception('UNEXPECTED AIRPORT CODE')
             raise TypeError('UNEXPECTED AIRPORT CODE: %s' % code)
 
         fpath = os.path.join(FLIGHT_DIR, FLIGHT_CODES_FPATH)
