@@ -9,12 +9,16 @@
 
 import os
 import re
+from dateutil import parser
+from obj.flight import Flight, Airport
 
 PDF_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'pdf', 'timetable.pdf')
 OUT_TXT = os.path.join(os.path.dirname(os.path.realpath(__file__)),  'pdf', 'out', 'out.txt')
 MAX_PAGES = 300
 
-REGEX = re.compile(r"([\w\-\., /']+)\((\w{3})([- \.'\w]+)?\)\n(Cont'd.|[\d,]+ mi)?(((\s*\d{1,2}:\d{2}[AP])\s*(\d{1,2}:\d{2}[AP])(\+\d)?\s*(\w{1,4})\s*(\w{3})\s+\d\s+(\d{1,2}h)?(\d{1,2}m) ([-SMTWTF|]+)\n)+)?")
+PDF_REGEX = re.compile(r"([\w\-\., /']+)\((\w{3})([- \.'\w]+)?\)\n(Cont'd.|[\d,]+ mi)?(((\s*\d{1,2}:\d{2}[AP])\s*(\d{1,2}:\d{2}[AP])(\+\d)?\s*(\w{1,4})\s*(\w{3})\s+\d\s+(\d{1,2}h)?(\d{1,2}m) ([-SMTWTF|]+)\n)+)?")
+
+SCHEDULE_CLEAN_REGEX = re.compile(r"(\d{1,2}:\d{1,2}[AP])\s+(\d{1,2}:\d{1,2}[AP])(\+\d)?\s+(\d{1,4})\s+(\w{3})\s\d\s+((\d{1,2}h)?(\d{1,2}m))([-| SMTWTF]+)")
 
 
 
@@ -27,7 +31,7 @@ class UnitedPdfParser(object):
         self._pdf_path = PDF_PATH
         self._out_txt = OUT_TXT
         self._full_pdf_string = None
-        self._regex = REGEX
+        self._regex = PDF_REGEX
 
     def input_pdf(self):
         self._create_txt_from_pdf()
@@ -40,7 +44,7 @@ class UnitedPdfParser(object):
         1) name, 2) code, 3) optional extention, 4) distance 5) schedule string
         """
 
-        regex_groups_original = re.findall(REGEX, self._full_pdf_string)
+        regex_groups_original = re.findall(self._regex, self._full_pdf_string)
 
         # The first 5 fields are most important
         regex_groups_trimmed = [group[:5] for group in regex_groups_original]
@@ -148,3 +152,62 @@ def _remove_headers(full_regex_list):
     regex_without_headers = [full_regex_list[i] for i in range(len(full_regex_list)) if i not in i_to_remove]
 
     return full_regex_list
+
+
+class FlightTupleParser(object):
+    """ Takes an individual flight object tuple and creates a list of flights """
+
+    def __init__(self, origin_tuple, flight_tuple):
+        """ 
+        Parameters
+        ----------
+        destination_tuple : origin tuple
+            From the read_in script a tuple that passes is_origin_or_header
+
+        flight_tuple : destination_tuple
+            A tuple that passes is_destination, has a schedule as last member
+        """
+
+        self._origin_tuple = origin_tuple 
+        self._flight_tuple = flight_tuple
+        self._resulting_flights = self._create_flights()
+
+    @property
+    def resulting_flights(self):
+        return self._resulting_flights
+
+    def _create_flights(self):
+
+        origin_location, origin_code, _, distance, schedule_lines = self._flight_tuple
+
+        schedule_list = schedule_lines.splitlines()
+
+        schedule_list = [schedule for schedule in schedule_list if schedule != '']
+
+
+        destination_location, destination_code, _, _, _ = self._origin_tuple
+
+        destination_airport = Airport(destination_code, destination_location)
+        origin_airport = Airport(origin_code, origin_location)
+
+        resulting_flights = []
+        for schedule in schedule_list:
+            info_tuple = re.findall(SCHEDULE_CLEAN_REGEX, schedule)
+            # departure, arrival, +1 (if necessary, flight number, equiptment, duration, duration hour, duration min, schedule string)
+
+            departure_str, arrival_str, p1, flight_number, equip, duration, _, _, _ = info_tuple[0]
+            departure = self._fix_time(departure_str) 
+            arrival = self._fix_time(arrival_str)
+
+
+            new_flight = Flight(origin_airport, destination_airport, departure, arrival, 
+                                flight_number, equip, duration)
+
+            resulting_flights.append(new_flight)
+
+        return resulting_flights
+
+    def _fix_time(self, flight_time):
+        flight_date_time = parser.parse(flight_time)
+        return flight_date_time
+
