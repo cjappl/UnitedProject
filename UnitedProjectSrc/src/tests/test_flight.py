@@ -1,7 +1,6 @@
 import pytest
 import datetime
 from flight.flight import * 
-from utils.united_logging import get_united_logger
 
 FLIGHT_TUP = ('DENVER, CO ',
   'DEN',
@@ -67,5 +66,4 @@ def test_flight_init_duration(full_flight):
 
 def test_flight_tuple_parser():
     FTP = FlightTupleParser(ORIGIN_TUP, FLIGHT_TUP)
-    pytest.set_trace()
     

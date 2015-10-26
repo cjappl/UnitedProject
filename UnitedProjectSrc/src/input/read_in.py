@@ -6,13 +6,9 @@
 #
 #
 # ---------------------------------------
-# TODO: remove
-import pdb
-from pprint import pformat
 
 import os
 import re
-from utils.united_logging import get_united_logger
 
 PDF_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'pdf', 'timetable.pdf')
 OUT_TXT = os.path.join(os.path.dirname(os.path.realpath(__file__)),  'pdf', 'out', 'out.txt')
@@ -20,7 +16,6 @@ MAX_PAGES = 300
 
 REGEX = re.compile(r"([\w\-\., /']+)\((\w{3})([- \.'\w]+)?\)\n(Cont'd.|[\d,]+ mi)?(((\s*\d{1,2}:\d{2}[AP])\s*(\d{1,2}:\d{2}[AP])(\+\d)?\s*(\w{1,4})\s*(\w{3})\s+\d\s+(\d{1,2}h)?(\d{1,2}m) ([-SMTWTF|]+)\n)+)?")
 
-logger = get_united_logger()
 
 
 class UnitedPdfParser(object):
@@ -56,8 +51,6 @@ class UnitedPdfParser(object):
 
     def _create_txt_from_pdf(self):
         """ creates .txt file from pdf using system call to pdf2txt.py """
-        logger.info('Creating text file from pdf: %s' % self._pdf_path)
-        logger.info('Starting at page %i' % self._page_start)
 
         page_str = ''
         for number in range(self._page_start, MAX_PAGES):
@@ -67,14 +60,11 @@ class UnitedPdfParser(object):
 
         cmd = 'pdf2txt.py -p %s -o %s %s' % (page_str, self._out_txt, self._pdf_path)
         os.system(cmd)
-        logger.info('SUCCESS!')
 
     def _read_txt_into_str(self):
         """ reads the txt file into a string variable """
-        logger.info('Reading in text file')
         with open(self._out_txt, 'r') as f:
             self._full_pdf_string = f.read()
-        logger.info('SUCCESS!')
 
 
 def is_header_or_origin(regex_parsed_tuple):
@@ -145,7 +135,6 @@ def _remove_headers(full_regex_list):
     """
     i_to_remove = []
     count = 0
-    pdb.set_trace()
     for index, regex_group in enumerate(full_regex_list): 
         if count == 3:
             i_to_remove.append(index - 2)
@@ -156,13 +145,6 @@ def _remove_headers(full_regex_list):
         else:
             count = 0
 
-    pdb.set_trace()
     regex_without_headers = [full_regex_list[i] for i in range(len(full_regex_list)) if i not in i_to_remove]
 
-
-    pdb.set_trace()
     return full_regex_list
-        
-
-
-

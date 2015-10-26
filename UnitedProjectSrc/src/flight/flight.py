@@ -11,12 +11,8 @@ import pdb
 import re
 from dateutil import parser
 
-from utils.united_logging import get_united_logger
-
 FLIGHT_CODES_FPATH = 'valid_flight_codes.txt'
 FLIGHT_DIR = os.path.dirname(os.path.realpath(__file__))
-
-logger = get_united_logger()
 
 SCHEDULE_CLEAN_REGEX = re.compile(r"(\d{1,2}:\d{1,2}[AP])\s+(\d{1,2}:\d{1,2}[AP])(\+\d)?\s+(\d{1,4})\s+(\w{3})\s\d\s+((\d{1,2}h)?(\d{1,2}m))([-| SMTWTF]+)")
 
@@ -61,7 +57,6 @@ class Airport(object):
         try:
             code = code.upper()
         except AttributeError:
-            logger.exception('UNEXPECTED AIRPORT CODE')
             raise TypeError('UNEXPECTED AIRPORT CODE: %s' % code)
 
         fpath = os.path.join(FLIGHT_DIR, FLIGHT_CODES_FPATH)

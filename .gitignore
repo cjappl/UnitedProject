@@ -1,4 +1,6 @@
 *.swp
 *.pyc
 *.sw*
-src/United_Project.egg-info/
+*.log
+*.log.*
+UnitedProjectSrc/src/United_Project.egg-info/

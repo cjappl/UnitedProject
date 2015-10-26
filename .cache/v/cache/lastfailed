@@ -1,3 +1,4 @@
 {
-  "tests/test_input.py": true
+  "UnitedProject/src/tests/test_flight.py": true, 
+  "UnitedProject/src/tests/test_input.py": true
 }
