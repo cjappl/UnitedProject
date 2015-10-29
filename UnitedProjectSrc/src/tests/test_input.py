@@ -3,6 +3,8 @@ from obj.flight import *
 import pytest
 import os
 
+START_PAGE = 109
+
 ORIGIN = ('CHICAGO, IL ', 'ORD', " - O'HARE", "Cont'd.", '')
 HEADER = ('COLLEGE STATION, TX ', 'CLL', '', '', '')
 DESTINATION =  ('BERLIN, GERMANY ',
@@ -22,7 +24,7 @@ FLIGHT_TUP = ('DENVER, CO ',
 
 @pytest.fixture
 def PDFparser():
-    PDFparser = UnitedPdfParser(109)
+    PDFparser = UnitedPdfParser(START_PAGE)
     return PDFparser
 
 
@@ -64,3 +66,8 @@ def test_input_regex(PDFparser):
 
 def test_flight_tuple_parser():
     FTP = FlightTupleParser(ORIGIN_TUP, FLIGHT_TUP)
+
+@pytest.mark.long
+@pytest.mark.all_available_flights
+def test_get_all_available_flights():
+    get_all_available_flights(START_PAGE)

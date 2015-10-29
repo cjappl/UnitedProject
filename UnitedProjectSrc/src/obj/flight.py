@@ -5,12 +5,14 @@
 # Tests: test_flight.py
 # TODO:
 # ---------------------------------------------
-# TODO: delete
-import pdb
 import os
+import logging
+from utils.flight_helpers import datetime_within_tolerance
 
 FLIGHT_CODES_FPATH = 'valid_flight_codes.txt'
 FLIGHT_DIR = os.path.dirname(os.path.realpath(__file__))
+
+logger = logging.getLogger(__name__)
 
 class Airport(object):
     """ A three letter string that represents a airport code """
@@ -59,7 +61,7 @@ class Airport(object):
             flight_codes = f.readlines()
 
         if code + '\n' not in flight_codes:
-            raise ValueError('FLIGHT CODE NOT FOUND: %s' % code)
+            raise AirportNotExistError('FLIGHT CODE NOT FOUND: %s' % code)
 
         return code
 
@@ -103,6 +105,20 @@ class Flight(object):
     def duration(self):
         return self._duration
 
+    def format_for_csv(self):
+
+        csv_tuple = (self._origin.location,
+                     self._origin.code,
+                     self.destination.location,
+                     self.destination.code, 
+                     self._departure.strftime('%I:%M %p'), 
+                     self._arrival.strftime('%I:%M %p'),
+                     self._duration,
+                     self._flight_num,
+                     self._equip)
+
+        return csv_tuple
+
     def __repr__(self):
         repr_str = ''
 
@@ -119,3 +135,17 @@ class Flight(object):
         repr_str += 'Plane: %s |' % self._equip
 
         return repr_str
+
+    def __eq__(self, other):
+        EQUALITY_TOL = 60  # 30 minute equality tolerance
+        if isinstance(other, self.__class__):
+            if self._flight_num == other.flight_num:
+                if datetime_within_tolerance(self._departure, other.departure, EQUALITY_TOL):
+                    return True
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+class AirportNotExistError(Exception):
+    pass
