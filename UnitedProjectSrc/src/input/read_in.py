@@ -97,7 +97,6 @@ class UnitedPdfParser(object):
 
         last_page_number = PdfFileReader(self._pdf_path).getNumPages()
 
-        def multiprocess_pdf2_txt():
         page_str = ''
         for number in range(page_start, last_page_number + 1):  # inclusive range to last page
             page_str += str(number) + ','
