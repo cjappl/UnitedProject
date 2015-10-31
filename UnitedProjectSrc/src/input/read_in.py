@@ -6,8 +6,6 @@
 #
 #
 # ---------------------------------------
-import pdb
-
 import os
 import re
 from PyPDF2 import PdfFileReader
@@ -17,10 +15,9 @@ from obj.flight import Flight, Airport, AirportNotExistError
 CURRENT_FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 OUT_TXT = os.path.join(CURRENT_FILE_DIR, 'pdf', 'out', 'out.txt')
 
-PDF_REGEX = re.compile(r"([\w\-\., /']+)\((\w{3})([- \.'\w]+)?\)\n(Cont'd.|[\d,]+ mi)?(((\s*\d{1,2}:\d{2}[AP])\s*(\d{1,2}:\d{2}[AP])(\+\d)?\s*(\w{1,4})\s*(\w{3})\s+\d\s+(\d{1,2}h)?(\d{1,2}m) ([-SMTWTF|]+)\n)+)?")
+PDF_REGEX = re.compile(r"([\w\-\., /\(\)']+)\((\w{3})([- \.'\w]+)?\)\n(Cont'd.|[\d,]+ mi)?(((\s*\d{1,2}:\d{2}[AP])\s*(\d{1,2}:\d{2}[AP])(\+\d)?\s*(\w{1,4})\s*(\w{3})\s+\d\s+(\d{1,2}h)?(\d{1,2}m) ([-SMTWTF|]+)\n)+)?")
 
 SCHEDULE_CLEAN_REGEX = re.compile(r"(\d{1,2}:\d{1,2}[AP])\s+(\d{1,2}:\d{1,2}[AP])(\+\d)?\s+(\d{1,4})\s+(\w{3})\s\d\s+((\d{1,2}h)?(\d{1,2}m))([-| SMTWTF]+)")
-
 
 def get_all_available_flights(page_start, USE_NEW_PDF):
     """ Will create all possible flights from a united pdf
@@ -94,11 +91,13 @@ class UnitedPdfParser(object):
         self._read_txt_into_str()
         self._create_regex_tuples()
 
+    @profile
     def _create_txt_from_pdf(self, page_start):
         """ creates .txt file from pdf using system call to pdf2txt.py """
 
         last_page_number = PdfFileReader(self._pdf_path).getNumPages()
 
+        def multiprocess_pdf2_txt():
         page_str = ''
         for number in range(page_start, last_page_number + 1):  # inclusive range to last page
             page_str += str(number) + ','
@@ -338,7 +337,7 @@ def _remove_headers(full_regex_list):
     count = 0
     for index, regex_group in enumerate(full_regex_list):
         if count == 3:
-           # we will keep the last, but remove the two before it
+            # we will keep the last, but remove the two before it
             # it is expected that we are on a destination flight now
             i_to_remove.append(index - 3)
             i_to_remove.append(index - 2)
@@ -346,7 +345,7 @@ def _remove_headers(full_regex_list):
             if is_header_or_origin(regex_group):
                 # case of 4 in a row
                 i_to_remove.append(index - 1)
- 
+
         if is_header_or_origin(regex_group):
             count += 1
         else:

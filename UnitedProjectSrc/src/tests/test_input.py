@@ -24,7 +24,7 @@ FLIGHT_TUP = ('DENVER, CO ',
 
 @pytest.fixture
 def PDFparser():
-    PDFparser = UnitedPdfParser(START_PAGE)
+    PDFparser = UnitedPdfParser()
     return PDFparser
 
 
@@ -46,20 +46,20 @@ def test_is_destination():
 
 @pytest.mark.long
 def test_create_txt_from_pdf(PDFparser):
-    PDFparser._create_txt_from_pdf()
+    PDFparser._create_txt_from_pdf(START_PAGE)
     assert os.path.isfile(PDFparser._out_txt)
 
 @pytest.mark.input_pdf
 @pytest.mark.long
 def test_input_pdf(PDFparser):
-    PDFparser.input_pdf()
+    PDFparser.input_pdf(START_PAGE)
 
     assert PDFparser._full_pdf_string
 
 @pytest.mark.long
 @pytest.mark.input_regex
 def test_input_regex(PDFparser):
-    PDFparser.input_pdf()
+    PDFparser.input_pdf(START_PAGE)
     PDFparser._create_regex_groups()
     list_of_reg = PDFparser._regex_groups
     assert len(list_of_reg)
@@ -70,4 +70,5 @@ def test_flight_tuple_parser():
 @pytest.mark.long
 @pytest.mark.all_available_flights
 def test_get_all_available_flights():
-    get_all_available_flights(START_PAGE)
+    USE_NEW_PDF = False
+    get_all_available_flights(START_PAGE, USE_NEW_PDF)

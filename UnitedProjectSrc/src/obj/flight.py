@@ -5,21 +5,28 @@
 # Tests: test_flight.py
 # TODO:
 # ---------------------------------------------
+import pdb
+
 import os
 import logging
+import json
 from utils.flight_helpers import datetime_within_tolerance
 
 FLIGHT_CODES_FPATH = 'valid_flight_codes.txt'
-FLIGHT_DIR = os.path.dirname(os.path.realpath(__file__))
+CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
+
+JSON_PATH = os.path.join(CURRENT_DIR, 'airports.json')
 
 logger = logging.getLogger(__name__)
+
 
 class Airport(object):
     """ A three letter string that represents a airport code """
 
     def __init__(self, code, location):
-        self._code = self._init_code(code)
         self._location = location
+        self._code = self._init_code(code)
+        self._continent = None 
 
     @property
     def code(self):
@@ -28,6 +35,10 @@ class Airport(object):
     @property
     def location(self):
         return self._location
+
+    @property
+    def continent(self):
+        return self._continent
 
     def _init_code(self, code):
         """ Cleans the code for input
@@ -56,14 +67,40 @@ class Airport(object):
         except AttributeError:
             raise TypeError('UNEXPECTED AIRPORT CODE: %s' % code)
 
-        fpath = os.path.join(FLIGHT_DIR, FLIGHT_CODES_FPATH)
-        with open(fpath) as f:
-            flight_codes = f.readlines()
+        """
+        flight_codes = [flight['iata'] for flight in self._flight_json]
 
-        if code + '\n' not in flight_codes:
+        if code not in flight_codes:
+            
+            # pdb.set_trace()
             raise AirportNotExistError('FLIGHT CODE NOT FOUND: %s' % code)
+        """
 
         return code
+
+    def _find_cont_from_json(self, airports):
+        # TODO: make flight_info global for code
+        # TODO: DON"T DO THAT FUCK
+        # OPENING AND CLOSING FILES TAKES A LONG TIME
+        # FIND SOME WAY TO INIT GRACEFULLY AND ONLY WHEN NECESSARY
+        
+        for airport in airports:
+            if airport['iata'] == self._code:
+                continent = str(airport['continent'])
+                self._continent = continent
+                break
+        else:
+            self._continent = '?'
+
+    def init_continent(self, airports):
+        self._find_cont_from_json(airports)
+
+    def _get_json(self):
+        with open(JSON_PATH, 'r') as f:
+            airport_json = json.load(f)
+
+        return airport_json
+
 
 
 class Flight(object):
@@ -108,10 +145,12 @@ class Flight(object):
     def format_for_csv(self):
 
         csv_tuple = (self._origin.location,
+                     self._origin.continent,
                      self._origin.code,
-                     self.destination.location,
-                     self.destination.code, 
-                     self._departure.strftime('%I:%M %p'), 
+                     self._destination.location,
+                     self._destination.continent,
+                     self._destination.code,
+                     self._departure.strftime('%I:%M %p'),
                      self._arrival.strftime('%I:%M %p'),
                      self._duration,
                      self._flight_num,
@@ -123,10 +162,10 @@ class Flight(object):
         repr_str = ''
 
         repr_str += '%s (%s) to %s (%s) | ' % (self._origin.location, self._origin.code,
-                                        self.destination.location, self.destination.code) 
+                                               self.destination.location, self.destination.code)
 
-        repr_str += 'Departing: %s | Arriving: %s | ' % (self._departure.strftime('%I:%M %p'), 
-                            self._arrival.strftime('%I:%M %p'))
+        repr_str += 'Departing: %s | Arriving: %s | ' % (self._departure.strftime('%I:%M %p'),
+                                                         self._arrival.strftime('%I:%M %p'))
 
         repr_str += 'Duration: %s | ' % self._duration
 
@@ -146,6 +185,7 @@ class Flight(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
 
 class AirportNotExistError(Exception):
     pass

@@ -4,6 +4,7 @@ import os
 import csv
 import logging
 import logging.handlers
+import json
 from input import get_all_available_flights, filter_flight_list
 
 logger = logging.getLogger(__name__) 
@@ -11,23 +12,33 @@ logger = logging.getLogger(__name__)
 CURRENT_FLIE_PATH = os.path.dirname(os.path.realpath(__name__))
 CSV_PATH = os.path.join(CURRENT_FLIE_PATH, os.path.pardir, os.path.pardir,
                         'CSV_OUTPUT_FOLDER', 'out.csv')
-
 def main():
     MIN_FLIGHT_NUM = 0 
-    MAX_FLIGHT_NUM = 2000
-    REMOVE_DUPLICATES = True
-    USE_NEW_PDF = False
-    PAGE_START = 109
+    MAX_FLIGHT_NUM = 6000 
+    REMOVE_DUPLICATES = False 
+    USE_NEW_PDF = True 
+    START_PAGE = 106
 
     assert MIN_FLIGHT_NUM < MAX_FLIGHT_NUM, 'Min flight number must be less than max!'
 
     conf_log()
-    all_flights = get_all_available_flights(PAGE_START, USE_NEW_PDF)
+    print "Getting all available flights! This may take a little..."
+    all_flights = get_all_available_flights(START_PAGE, USE_NEW_PDF)
 
+    print "Filtering flights!"
     filtered_flights = filter_flight_list(all_flights, REMOVE_DUPLICATES, 
                                           (MIN_FLIGHT_NUM, MAX_FLIGHT_NUM))
 
-    pdb.set_trace()
+    print "Initializing continent fields!"
+    JSON_PATH = os.path.join(CURRENT_FLIE_PATH, 'obj', 'airports.json') 
+    with open(JSON_PATH, 'r') as f:
+        airport_db = json.load(f)
+
+    for flight in filtered_flights:
+        flight.origin.init_continent(airport_db)
+        flight.destination.init_continent(airport_db)
+
+    print "Outputting CSV file!"
     create_flight_csv(filtered_flights, CSV_PATH)
 
 
