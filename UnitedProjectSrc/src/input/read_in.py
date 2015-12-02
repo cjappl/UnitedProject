@@ -91,7 +91,6 @@ class UnitedPdfParser(object):
         self._read_txt_into_str()
         self._create_regex_tuples()
 
-    @profile
     def _create_txt_from_pdf(self, page_start):
         """ creates .txt file from pdf using system call to pdf2txt.py """
 
