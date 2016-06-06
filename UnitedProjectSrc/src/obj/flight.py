@@ -5,7 +5,6 @@
 # Tests: test_flight.py
 # TODO:
 # ---------------------------------------------
-import pdb
 
 import os
 import logging
@@ -19,6 +18,9 @@ JSON_PATH = os.path.join(CURRENT_DIR, 'airports.json')
 
 logger = logging.getLogger(__name__)
 
+CSV_TIME_FORMAT = '%H:%M'
+PDF_TIME_FORMAT = '%I:%M %p'
+
 
 class Airport(object):
     """ A three letter string that represents a airport code """
@@ -26,7 +28,8 @@ class Airport(object):
     def __init__(self, code, location):
         self._location = location
         self._code = self._init_code(code)
-        self._continent = None 
+        self._continent = None
+        self.db_entry = None
 
     @property
     def code(self):
@@ -71,29 +74,36 @@ class Airport(object):
         flight_codes = [flight['iata'] for flight in self._flight_json]
 
         if code not in flight_codes:
-            
+
             # pdb.set_trace()
             raise AirportNotExistError('FLIGHT CODE NOT FOUND: %s' % code)
         """
 
         return code
 
-    def _find_cont_from_json(self, airports):
-        # TODO: make flight_info global for code
-        # TODO: DON"T DO THAT FUCK
-        # OPENING AND CLOSING FILES TAKES A LONG TIME
-        # FIND SOME WAY TO INIT GRACEFULLY AND ONLY WHEN NECESSARY
-        
-        for airport in airports:
-            if airport['iata'] == self._code:
-                continent = str(airport['continent'])
-                self._continent = continent
-                break
-        else:
-            self._continent = '?'
-
     def init_continent(self, airports):
-        self._find_cont_from_json(airports)
+        if self.db_entry:
+            self._continent = self.db_entry['continent']
+        else:
+            # must search through database
+            for airport in airports:
+                if airport['iata'] == self._code:
+                    self.db_entry = airport
+                    self._continent = str(airport['continent'])
+                    break
+            else:
+                self._continent = '?'
+
+    def init_location(self, airports):
+        if self.db_entry:
+            self._location = self.db_entry['name']
+        else:
+            for airport in airports:
+                if airport['iata'] == self._code:
+                    self.location = str(airport['name'])
+                    break
+            else:
+                self._location = '?'
 
     def _get_json(self):
         with open(JSON_PATH, 'r') as f:
@@ -102,10 +112,10 @@ class Airport(object):
         return airport_json
 
 
-
 class Flight(object):
 
-    def __init__(self, origin, destination, departure, arrival, flight_num, equip, duration):
+    def __init__(self, origin, destination, departure, arrival,
+                 flight_num, equip, duration, DOW=None):
         self._origin = origin
         self._destination = destination
         self._departure = departure
@@ -113,6 +123,7 @@ class Flight(object):
         self._flight_num = flight_num
         self._equip = equip
         self._duration = duration
+        self._DOW = self._fill_days_of_week(DOW)
 
     @property
     def origin(self):
@@ -142,19 +153,59 @@ class Flight(object):
     def duration(self):
         return self._duration
 
+    def _fill_days_of_week(self, DOW):
+        if DOW is None:
+            return
+        if '1' in DOW:
+            self.mon = 'Mon'
+        else:
+            self.mon = ''
+        if '2' in DOW:
+            self.tue = 'Tue'
+        else:
+            self.tue = ''
+        if '3' in DOW:
+            self.wed = 'Wed'
+        else:
+            self.wed = ''
+        if '4' in DOW:
+            self.thu = 'Thu'
+        else:
+            self.thu = ''
+        if '5' in DOW:
+            self.fri = 'Fri'
+        else:
+            self.fri = ''
+        if '6' in DOW:
+            self.sat = 'Sat'
+        else:
+            self.sat = ''
+        if '7' in DOW:
+            self.sun = 'Sun'
+        else:
+            self.sun = ''
+
     def format_for_csv(self):
 
         csv_tuple = (self._origin.location,
-                     self._origin.continent,
                      self._origin.code,
+                     self._origin.continent,
                      self._destination.location,
-                     self._destination.continent,
                      self._destination.code,
-                     self._departure.strftime('%I:%M %p'),
-                     self._arrival.strftime('%I:%M %p'),
+                     self._destination.continent,
+                     self._departure.strftime(CSV_TIME_FORMAT),
+                     self._arrival.strftime(CSV_TIME_FORMAT),
                      self._duration,
                      self._flight_num,
-                     self._equip)
+                     self._equip,
+                     self.sun,
+                     self.mon,
+                     self.tue,
+                     self.wed,
+                     self.thu,
+                     self.fri,
+                     self.sat
+                     )
 
         return csv_tuple
 
@@ -164,8 +215,9 @@ class Flight(object):
         repr_str += '%s (%s) to %s (%s) | ' % (self._origin.location, self._origin.code,
                                                self.destination.location, self.destination.code)
 
-        repr_str += 'Departing: %s | Arriving: %s | ' % (self._departure.strftime('%I:%M %p'),
-                                                         self._arrival.strftime('%I:%M %p'))
+        repr_str += 'Departing: %s | Arriving: %s | ' % \
+                    (self._departure.strftime(CSV_TIME_FORMAT),
+                     self._arrival.strftime(CSV_TIME_FORMAT))
 
         repr_str += 'Duration: %s | ' % self._duration
 

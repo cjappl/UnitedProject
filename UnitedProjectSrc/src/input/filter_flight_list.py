@@ -36,7 +36,12 @@ def filter_flight_list(flight_list, remove_duplicates=None, flight_number_range=
             seen_flights.sort(key=lambda fl: fl.departure)
             flights_to_filter += seen_flights
     else:
-        flights_to_filter = [flight for sublist in flight_list for flight in sublist]
+        try:
+            # list of lists option, used in the pdf
+            flights_to_filter = [flight for sublist in flight_list for flight in sublist]
+        except TypeError:
+            # Flat list, found in the csv
+            flights_to_filter = flight_list
 
     if flight_number_range:
         min_flight_num, max_flight_num = flight_number_range

@@ -6,11 +6,13 @@
 #
 #
 # ---------------------------------------
+import csv
 import os
 import re
 from PyPDF2 import PdfFileReader
 from dateutil import parser
 from obj.flight import Flight, Airport, AirportNotExistError
+
 
 CURRENT_FILE_DIR = os.path.dirname(os.path.realpath(__file__))
 OUT_TXT = os.path.join(CURRENT_FILE_DIR, 'pdf', 'out', 'out.txt')
@@ -19,7 +21,8 @@ PDF_REGEX = re.compile(r"([\w\-\., /\(\)']+)\((\w{3})([- \.'\w]+)?\)\n(Cont'd.|[
 
 SCHEDULE_CLEAN_REGEX = re.compile(r"(\d{1,2}:\d{1,2}[AP])\s+(\d{1,2}:\d{1,2}[AP])(\+\d)?\s+(\d{1,4})\s+(\w{3})\s\d\s+((\d{1,2}h)?(\d{1,2}m))([-| SMTWTF]+)")
 
-def get_all_available_flights(page_start, USE_NEW_PDF):
+
+def get_flights_pdf(page_start, USE_NEW_PDF):
     """ Will create all possible flights from a united pdf
 
     Parameters
@@ -65,6 +68,34 @@ def get_all_available_flights(page_start, USE_NEW_PDF):
     return all_flights
 
 
+def get_flights_csv(csv_path):
+    """ Reads in a csv with flight info, outputs flights """
+
+    all_flights = []
+    with open(csv_path, 'rU') as f:
+        reader = csv.reader(f)
+        for line in reader:
+            if line[0] == 'Departs':
+                continue
+            else:
+                origin = Airport(line[0], '')
+                destination = Airport(line[1], '')
+                flight_number = int(line[2])
+                departure = _fix_time(line[3])
+                arrival = _fix_time(line[4])
+                equiptment = line[5]
+                DOW = line[6]
+                if not origin:
+                    continue
+
+                new_flight = Flight(origin, destination, departure, arrival,
+                                    flight_number, equiptment, None, DOW)
+
+                all_flights.append(new_flight)
+
+    return all_flights
+
+
 class UnitedPdfParser(object):
 
     def __init__(self):
@@ -96,11 +127,9 @@ class UnitedPdfParser(object):
 
         last_page_number = PdfFileReader(self._pdf_path).getNumPages()
 
-        page_str = ''
-        for number in range(page_start, last_page_number + 1):  # inclusive range to last page
-            page_str += str(number) + ','
+        rng = range(page_start, last_page_number + 1)  # inclusive range to last page
 
-        page_str = page_str[:-1]  # remove the last comma
+        page_str = ','.join([str(page) for page in rng])
         # above lines will output in the form N,M,O,P where each letter is a page to extract from the .pdf
 
         cmd = 'pdf2txt.py -p %s -o %s %s' % (page_str, self._out_txt, self._pdf_path)
@@ -180,8 +209,8 @@ class FlightTupleParser(object):
 
             departure_str, arrival_str, p1, flight_num, equip, duration, _, _, _ = info_tuple[0]
             flight_num = int(flight_num)
-            departure = self._fix_time(departure_str)
-            arrival = self._fix_time(arrival_str)
+            departure = _fix_time(departure_str)
+            arrival = _fix_time(arrival_str)
 
             # If the flight looks like it can be simplified, we'll skip it and leave the earlier
 
@@ -192,23 +221,6 @@ class FlightTupleParser(object):
             resulting_flights.append(new_flight)
 
         return resulting_flights
-
-    def _fix_time(self, flight_time_str):
-        """ Parses flight time string and returns a datetime object
-
-        Parameters
-        ----------
-        flight_time_str : str
-            Ususally in the form 12:00PM, parser should handle others
-
-        Returns
-        -------
-        flight_date_time : datetime.datetime
-            Datetime object of the same time
-        """
-
-        flight_date_time = parser.parse(flight_time_str)
-        return flight_date_time
 
     def _strip_tuple(self, input_tuple):
         """ Removes leading and following spaces from each field in the tuple
@@ -352,3 +364,21 @@ def _remove_headers(full_regex_list):
     regex_without_headers = [full_regex_list[i] for i in range(len(full_regex_list)) if i not in i_to_remove]
 
     return regex_without_headers
+
+
+def _fix_time(flight_time_str):
+    """ Parses flight time string and returns a datetime object
+
+    Parameters
+    ----------
+    flight_time_str : str
+        Ususally in the form 12:00PM, parser should handle others
+
+    Returns
+    -------
+    flight_date_time : datetime.datetime
+        Datetime object of the same time
+    """
+
+    flight_date_time = parser.parse(flight_time_str)
+    return flight_date_time
