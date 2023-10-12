@@ -23,12 +23,10 @@ PDF_TIME_FORMAT = '%I:%M %p'
 
 
 class Airport(object):
-    """ A three letter string that represents a airport code """
 
     def __init__(self, code, location):
         self._location = location
         self._code = self._init_code(code)
-        self._continent = None
         self.db_entry = None
 
     @property
@@ -41,7 +39,17 @@ class Airport(object):
 
     @property
     def continent(self):
-        return self._continent
+        try:
+            return self._continent
+        except AttributeError:
+            return None
+
+    @property
+    def country(self):
+        try:
+            return self._country
+        except AttributeError:
+            return None
 
     def _init_code(self, code):
         """ Cleans the code for input
@@ -70,15 +78,6 @@ class Airport(object):
         except AttributeError:
             raise TypeError('UNEXPECTED AIRPORT CODE: %s' % code)
 
-        """
-        flight_codes = [flight['iata'] for flight in self._flight_json]
-
-        if code not in flight_codes:
-
-            # pdb.set_trace()
-            raise AirportNotExistError('FLIGHT CODE NOT FOUND: %s' % code)
-        """
-
         return code
 
     def init_continent(self, airports):
@@ -100,7 +99,20 @@ class Airport(object):
         else:
             for airport in airports:
                 if airport['iata'] == self._code:
-                    self.location = str(airport['name'])
+                    self.db_entry = airport
+                    self._location = str(airport['name'])
+                    break
+            else:
+                self._location = '?'
+
+    def init_country(self, airports):
+        if self.db_entry:
+            self._country = self.db_entry['iso']
+        else:
+            for airport in airports:
+                if airport['iata'] == self._code:
+                    self.db_entry = airport
+                    self._country = str(airport['iso'])
                     break
             else:
                 self._location = '?'
@@ -190,9 +202,11 @@ class Flight(object):
         csv_tuple = (self._origin.location,
                      self._origin.code,
                      self._origin.continent,
+                     self._origin.country,
                      self._destination.location,
                      self._destination.code,
                      self._destination.continent,
+                     self._destination.country,
                      self._departure.strftime(CSV_TIME_FORMAT),
                      self._arrival.strftime(CSV_TIME_FORMAT),
                      self._duration,
@@ -228,7 +242,7 @@ class Flight(object):
         return repr_str
 
     def __eq__(self, other):
-        EQUALITY_TOL = 60  # 30 minute equality tolerance
+        EQUALITY_TOL = 60
         if isinstance(other, self.__class__):
             if self._flight_num == other.flight_num:
                 if datetime_within_tolerance(self._departure, other.departure, EQUALITY_TOL):

@@ -19,7 +19,7 @@ OUT_TXT = os.path.join(CURRENT_FILE_DIR, 'pdf', 'out', 'out.txt')
 
 PDF_REGEX = re.compile(r"([\w\-\., /\(\)']+)\((\w{3})([- \.'\w]+)?\)\n(Cont'd.|[\d,]+ mi)?(((\s*\d{1,2}:\d{2}[AP])\s*(\d{1,2}:\d{2}[AP])(\+\d)?\s*(\w{1,4})\s*(\w{3})\s+\d\s+(\d{1,2}h)?(\d{1,2}m) ([-SMTWTF|]+)\n)+)?")
 
-SCHEDULE_CLEAN_REGEX = re.compile(r"(\d{1,2}:\d{1,2}[AP])\s+(\d{1,2}:\d{1,2}[AP])(\+\d)?\s+(\d{1,4})\s+(\w{3})\s\d\s+((\d{1,2}h)?(\d{1,2}m))([-| SMTWTF]+)")
+SCHEDULE_CLEAN_REGEX = re.compile(r'(\d{1,2}:\d{1,2}[AP])\s+(\d{1,2}:\d{1,2}[AP])(\+\d)?\s+(\d{1,4})\s+(\w{3})\s\d\s+((\d{1,2}h)?(\d{1,2}m))([-| SMTWTF]+)')
 
 
 def get_flights_pdf(page_start, USE_NEW_PDF):
@@ -80,7 +80,10 @@ def get_flights_csv(csv_path):
             else:
                 origin = Airport(line[0], '')
                 destination = Airport(line[1], '')
-                flight_number = int(line[2])
+                try:
+                    flight_number = int(line[2])
+                except ValueError:
+                    continue
                 departure = _fix_time(line[3])
                 arrival = _fix_time(line[4])
                 equiptment = line[5]
